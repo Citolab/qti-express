@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="lab:QTI.Namespace"
+  xmlns="lab:QTI.Namespace"
+  elementFormDefault="qualified"
+>
+  <xs:element name="qti-assessment-item">
+    <xs:annotation>
+      <xs:documentation>Het item, deze kan meerdere interacties bevatten
+      Hierna volgt een stylesheet of een qti-item-body, hierbinnen kan je je vraag opmaken</xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="qti-stylesheet" minOccurs="0" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>Dit is de stylesheet van het item</xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:attribute name="href" type="xs:string" use="required" />
+            <xs:attribute name="type" type="xs:string" use="required" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="qti-item-body" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation
+            >Hier is waar je de inhoud van het item typet, gebruik de volgende elementen hiervoor</xs:documentation>
+          </xs:annotation>
+          <xs:complexType mixed="true">
+            <xs:sequence>
+              <xs:element name="h1" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>Een kop, zoals dit Dit is de titel</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="p" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>Een paragraaf, zoals dit Hier komt een text</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+
+              <xs:element name="span" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation
+                  >Hier is waar je de inhoud van het item typet, gebruik de volgende elementen hiervoor</xs:documentation>
+                </xs:annotation>
+              </xs:element>
+
+              <xs:element name="img">
+                <xs:annotation>
+                  <xs:documentation>Dit is een afbeelding</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="img" type="xs:string" use="optional" />
+                  <xs:attribute name="alt" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="div">
+                <xs:annotation>
+                  <xs:documentation
+                  >Hier is waar je de inhoud van het item typet, gebruik de volgende elementen hiervoor</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="class" type="xs:string" use="optional" />
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="qti-text-entry-interaction" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>Een tekst invoer veld, gebruik de volgende eigenschappen
+                    pattern-mask: hiermee kan je aangeven wat er wel of niet ingevoerd kan worden
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="class" type="xs:string" use="optional" />
+                  <xs:attribute name="response-identifier" type="xs:string" use="required" />
+                  <xs:attribute name="pattern-mask" type="xs:string" use="optional" />
+                  <xs:attribute name="expected-length" type="xs:unsignedByte" use="optional" />
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="qti-extended-text-entry-interaction" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>Een tekstvak</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:attribute name="class">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="qti-height-lines-2" />
+                        <xs:enumeration value="qti-height-lines-3" />
+                        <xs:enumeration value="qti-height-lines-5" />
+                        <xs:enumeration value="qti-height-lines-8" />
+                        <xs:enumeration value="qti-height-lines-12" />
+                        <xs:enumeration value="qti-height-lines-15" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="response-identifier" type="xs:string" use="required" />
+                  <xs:attribute name="pattern-mask" type="xs:string" use="optional" />
+                  <xs:attribute name="expected-length" type="xs:unsignedByte" use="optional" />
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="qti-choice-interaction" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>Een meerkeuze vraag 1 of meerdere antwoorden goed</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+
+                    <xs:element name="qti-prompt" minOccurs="0" maxOccurs="1">
+                      <xs:complexType mixed="true">
+                        <xs:sequence>
+                          <xs:element name="p" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+
+                    <xs:element name="qti-simple-choice" minOccurs="0" maxOccurs="unbounded">
+                      <xs:annotation>
+                        <xs:documentation>Een meerkeuze optie</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType mixed="true">
+                        <xs:attribute name="identifier" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+
+                  </xs:sequence>
+
+                  <xs:attribute name="id" type="xs:string" use="optional" />
+                  <xs:attribute name="class">
+                    <xs:annotation>
+                      <xs:documentation>De layout van dit item</xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="qti-input-control-hidden" />
+                        <xs:enumeration value="qti-choices-stacking-2" />
+                        <xs:enumeration value="qti-choices-stacking-2 qti-input-control-hidden" />
+                        <xs:enumeration value="qti-choices-stacking-3" />
+                        <xs:enumeration value="qti-choices-stacking-3 qti-input-control-hidden" />
+                        <xs:enumeration value="qti-choices-stacking-4" />
+                        <xs:enumeration value="qti-choices-stacking-4 qti-input-control-hidden" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+
+                  <xs:attribute name="shuffle" type="xs:boolean" use="optional" />
+                  <xs:attribute name="response-identifier" type="xs:string" use="required" />
+                  <xs:attribute name="min-choices" type="xs:unsignedByte" use="required" />
+                  <xs:attribute name="max-choices" type="xs:unsignedByte" use="required" />
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="qti-gap-match-interaction" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>Een sleep vraag</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="qti-gap-text" minOccurs="1">
+                      <xs:annotation>
+                        <xs:documentation>De te slepen text</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:attribute name="class" type="xs:string" use="optional" />
+                        <xs:attribute name="identifier" type="xs:string" use="required" />
+                        <xs:attribute name="match-max" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="qti-gap" minOccurs="1">
+                      <xs:annotation>
+                        <xs:documentation>Het vak waar je het in moet slepen</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:attribute name="class" type="xs:string" use="optional" />
+                        <xs:attribute name="identifier" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="class" type="xs:string" use="optional" />
+                  <xs:attribute name="min-associations" type="xs:string" use="optional" />
+                  <xs:attribute name="max-associations" type="xs:string" use="optional" />
+                  <xs:attribute name="shuffle" type="xs:boolean" use="optional" />
+                  <xs:attribute name="response-identifier" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+
+              <xs:element name="qti-inline-choice-interaction" minOccurs="0">
+                <xs:annotation>
+                  <xs:documentation>Dropdown met opties</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="qti-inline-choice" minOccurs="1">
+                      <xs:annotation>
+                        <xs:documentation>Optie van de dropdown</xs:documentation>
+                      </xs:annotation>
+                      <xs:complexType>
+                        <xs:attribute name="class" type="xs:string" use="optional" />
+                        <xs:attribute name="identifier" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="class" type="xs:string" use="optional" />
+                  <xs:attribute name="shuffle" type="xs:boolean" use="optional" />
+                  <xs:attribute name="response-identifier" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="identifier" type="xs:string" use="required" />
+      <xs:attribute name="title" type="xs:string" use="required" />
+      <!-- <xs:attribute name="adaptive" type="xs:boolean" use="required" /> -->
+      <!-- <xs:attribute name="time-dependent" type="xs:boolean" use="required" />  -->
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
