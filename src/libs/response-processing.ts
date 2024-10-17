@@ -2,7 +2,7 @@ import { QtiAssessmentItem, ResponseInteraction } from "@citolab/qti-components"
 import * as fs from "fs";
 import * as jsdom from "jsdom";
 import { environment } from "../environments/environment";
-import { processQtiXML } from "./lib";
+import { processQtiItem } from "./lib";
 
 const { JSDOM } = jsdom;
 
@@ -28,7 +28,7 @@ export const getResponse = (itemId): ResponseInteraction[] | null => {
 };
 
 export const getScore = (packageId, itemHref, itemId): number | null => {
-  const itemXML = processQtiXML(packageId, itemHref, true);
+  const itemXML = processQtiItem(packageId, itemHref, true);
   const response = itemResponses.get(itemId);
 
   const { window } = new JSDOM(``, { runScripts: "dangerously" });

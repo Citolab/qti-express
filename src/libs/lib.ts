@@ -1,193 +1,166 @@
-// import * as libxslt from 'libxslt';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as cheerio from 'cheerio';
 
+const packagesDir = path.resolve(__dirname, '../packages') + '/';
 
-import { testLoader, ManifestData } from '@citolab/qti-convert/qti-loader';
-import { qtiTransform } from '@citolab/qti-convert/qti-transformer';
-
-
-const packages = path.resolve(__dirname, '../packages/') + '/';
-const itemsfolder = 'items/';
-
-// function getAssessmentTextXML(content, packageId) {
-//   const qtiNamespaces = [
-//     'http://www.imsglobal.org/xsd/imsqti_v2p1',
-//     'http://www.imsglobal.org/xsd/imsqti_v2p2',
-//     'http://www.imsglobal.org/xsd/qti/qtiv3p0/imscp_v1p1',
-//   ];
-//   const testNamespaces = ['imsqti_test_xmlv2p1', 'imsqti_test_xmlv2p2', 'imsqti_test_xmlv3p0'];
-
-//   content = getImsmanifestXML(packageId);
-
-//   if (content) {
-//     try {
-//       const $ = cheerio.xml(content)
-//       const xmlDoc = libxmljs.parseXml(content);
-//       const allNamespaces = xmlDoc.root().namespaces();
-//       const myQTINamespace = allNamespaces.find((ns) => ns.prefix() === null).href();
-//       const myTestNamespace = testNamespaces[qtiNamespaces.findIndex((ns) => ns === myQTINamespace)];
-//       const testNode: libxmljs.Attribute = xmlDoc.get(
-//         "//n:resources/n:resource[@type='" + myTestNamespace + "']/@href",
-//         {
-//           n: xmlDoc.root().namespace().href(),
-//         }
-//       );
-//       const assessmenttest = fs.readFileSync(packages + packageId + '/' + testNode.value(), 'utf8');
-
-//       return {
-//         content: assessmenttest,
-//         location: testNode.value().split('/')[0],
-//       };
-//     } catch (err) {
-//       console.log(err);
-//     }
-//   }
-// }
-
-// function getImsmanifestXML(packageId) {
-//   const manifestLocation = packages + packageId + '/imsmanifest.xml';
-//   let content = null;
-//   try {
-//     if (fs.existsSync(manifestLocation)) {
-//       try {
-//         content = fs.readFileSync(manifestLocation, 'utf8');
-//       } catch (err) {
-//         console.error(err);
-//       }
-//     }
-//   } catch (err) {
-//     console.error(err);
-//   }
-//   return content;
-// }
-
-export const processQtiXML = (packageId, itemHref, noresponsexml) => {
-  let xmlString = getItem(packageId, itemHref);
-  // xmlString = xslCustomTypes.apply(xmlString);
-
-  // if (noresponsexml === 'true') {
-  //   xmlString = xslStripResponse.apply(xmlString);
-  // }
-  // xmlString = qtiConvert(xmlString).qti2To3().xml();
-
-  return xmlString;
-};
-
-/* ------------------------------------------------------------------------------------------ */
-
-function getItem(qtipackage, itemIndex) {
-  // const imsmanifest = getImsmanifestXML(qtipackage);
-
-  const assessmenttestlocation = 'items';
-  // if (imsmanifest !== null) {
-  // FIXME: pk should get the location of the href of the item <qti-assessment-item-ref href="G6HG5e.xml" category="ItemFunctionalType_Regular" identifier="ITM-G6HG5e">
-  //   assessmenttestlocation = getAssessmentTextXML(imsmanifest.content, qtipackage).location;
-  // }
-
-  const files = getItemFiles(packages + '/' + qtipackage + '/' + assessmenttestlocation);
-  let fileName = '';
-  if (files.indexOf(itemIndex) > -1) {
-    fileName = itemIndex;
-  } else {
-    throw new Error('Not a valid index for an item, use xml/itemname.xml');
+/**
+ * Reads the IMS manifest XML for a given package.
+ * @param packageId - The ID of the package.
+ * @returns The IMS manifest XML as a string, or null if not found.
+ */
+function readManifest(packageId: string): string | null {
+  const manifestPath = path.join(packagesDir, packageId, 'imsmanifest.xml');
+  try {
+    if (fs.existsSync(manifestPath)) {
+      return fs.readFileSync(manifestPath, 'utf8');
+    }
+  } catch (error) {
+    console.error(`Error reading manifest for package ${packageId}:`, error);
   }
-  return fs.readFileSync(packages + '/' + qtipackage + '/' + assessmenttestlocation + '/' + fileName, 'utf8');
+  return null;
 }
 
-function getDirectories(path) {
-  return fs.readdirSync(path).filter(function (file) {
-    return fs.statSync(path + '/' + file).isDirectory();
-  });
+/**
+ * Extracts and loads the assessment test XML from the manifest.
+ * @param manifestContent - The IMS manifest XML content.
+ * @param packageId - The ID of the package.
+ * @returns An object containing the assessment test XML content, its location, and filename.
+ */
+function loadAssessmentTest(manifestContent: string, packageId: string) {
+  const $ = cheerio.load(manifestContent, { xmlMode: true });
+  const testHref = $('resource[type="imsqti_test_xmlv3p0"]').attr('href');
+
+  if (!testHref) {
+    throw new Error(`Assessment test not found in the manifest for package ${packageId}.`);
+  }
+
+  const testPath = path.join(packagesDir, packageId, testHref);
+  if (!fs.existsSync(testPath)) {
+    throw new Error(`Assessment test file not found at ${testPath}.`);
+  }
+
+  const testContent = fs.readFileSync(testPath, 'utf8');
+  return {
+    content: testContent,
+    location: path.dirname(testHref),
+    filename: path.basename(testHref),
+  };
 }
 
-// Reads files from filelocation and returns an array with files
-function getItemFiles(fileLocation) {
-  const files = [];
-  fs.readdirSync(fileLocation).forEach((file) => {
-    files.push(file);
-  });
-  return files;
+/**
+ * Retrieves the XML content of a specific item from the package.
+ * @param packageId - The ID of the package.
+ * @param itemHref - The href of the item XML.
+ * @returns The item XML content as a string.
+ */
+function getItemContent(packageId: string, itemHref: string): string {
+  const manifestContent = readManifest(packageId);
+  if (!manifestContent) {
+    throw new Error(`Manifest not found for package ${packageId}.`);
+  }
+
+  const { location } = loadAssessmentTest(manifestContent, packageId);
+  const itemFiles = getItemFilePaths(packageId, location);
+  const itemPath = itemFiles.find(file => file.endsWith(itemHref));
+
+  if (!itemPath) {
+    throw new Error(`Item ${itemHref} not found in package ${packageId}.`);
+  }
+
+  return fs.readFileSync(itemPath, 'utf8');
 }
 
-export const validateItemXML = (packageId, itemHref) => {
-  // let xmlString = processQtiXML(packageId, itemHref, false);
-  // // // Redefine schemalocation for xsd checking
-  // const QTIComponentsSchema = 'xsi:schemaLocation="lab:QTI.Namespace ../../../xsd/QTIComponents.xsd"';
+/**
+ * Parses the assessment test XML and retrieves the item hrefs and identifiers.
+ * @param assessmentTestPath - The path to the assessment test XML.
+ * @returns An array of objects containing item href and identifier.
+ */
+function parseAssessmentItems(assessmentTestPath: string): { href: string; identifier: string }[] {
+  const testContent = fs.readFileSync(assessmentTestPath, 'utf8');
+  const $ = cheerio.load(testContent, { xmlMode: true });
 
-  // const regex1 = /xsi:schemaLocation="([^"]*)"/gm;
+  return $('qti-assessment-item-ref').map((_, element) => {
+    const href = $(element).attr('href');
+    const identifier = $(element).attr('identifier');
+    if (!href || !identifier) {
+      throw new Error('Item href or identifier missing in the assessment test XML.');
+    }
+    return { href, identifier };
+  }).get();
+}
 
-  // if (xmlString.match(regex1)) {
-  //   xmlString.replace(regex1, QTIComponentsSchema);
-  // } else {
-  //   xmlString = xmlString.replace('<qti-assessment-item', '<qti-assessment-item ' + QTIComponentsSchema);
+/**
+ * Retrieves the full file paths of items from the assessment test XML.
+ * @param packageId - The ID of the package.
+ * @param assessmentLocation - The location of the assessment test XML.
+ * @returns An array of full item file paths.
+ */
+function getItemFilePaths(packageId: string, assessmentLocation: string): string[] {
+  const manifestContent = readManifest(packageId);
+  if (!manifestContent) {
+    throw new Error(`Manifest not found for package ${packageId}.`);
+  }
+
+  const { filename } = loadAssessmentTest(manifestContent, packageId);
+  const assessmentTestPath = path.join(packagesDir, packageId, assessmentLocation, filename);
+  const items = parseAssessmentItems(assessmentTestPath);
+
+  return items.map(item => path.join(packagesDir, packageId, assessmentLocation, item.href));
+}
+
+/**
+ * Processes the QTI XML content, with optional stripping of response data.
+ * @param packageId - The ID of the package.
+ * @param itemHref - The href of the item.
+ * @param removeResponses - Whether to strip responses from the XML.
+ * @returns The processed QTI XML string.
+ */
+export function processQtiItem(packageId: string, itemHref: string, removeResponses: boolean): string {
+  let xmlContent = getItemContent(packageId, itemHref);
+
+  // Apply transformations or response stripping if needed (stubs for further implementation)
+  // xmlContent = applyCustomTransform(xmlContent);
+  // if (removeResponses) {
+  //   xmlContent = stripResponses(xmlContent);
   // }
+  // xmlContent = convertQti2to3(xmlContent).xml();
 
-  // // Redefine namespace for xsd checking
-  // const QTIComponentsNamespace = 'xmlns="lab:QTI.Namespace"';
-
-  // const regex2 = /xmlns="([^"]*)"/gm;
-
-  // if (xmlString.match(regex2)) {
-  //   xmlString = xmlString.replace(regex2, QTIComponentsNamespace);
-  // }
-
-  // // validate
-  // const xmlDoc = libxmljs.parseXml(xmlString);
-  // // xmlDoc.validate(xsdQTIComponents);
-  // const validationErrors = xmlDoc.validationErrors.map((err) => {
-  //   return { message: err.message };
-  // });
-
-  // return validationErrors;
-};
-
-export function itemsJson(packageId) {
-  // IN THE STORY WE CHECK FIRST IF WE DO NOT HAVE AN ASSESSMENT XML
-  // let files;
-  // try {
-    // const imsmanifest = getImsmanifestXML(packageId);
-    // const assessmenttest = getAssessmentTextXML(imsmanifest.content, packageId);
-    // const xmlDoc = libxmljs.parseXml(assessmenttest.content);
-    // const testNodes = xmlDoc.find(
-    //   '//n:qti-assessment-test/n:qti-test-part/n:qti-assessment-section/n:qti-assessment-item-ref',
-    //   {
-    //     n: xmlDoc.root().namespace().href(),
-    //   }
-    // );
-    // files = testNodes.map((t) => ({
-    //   href: (t as libxmljs.Element).attr('href').value(),
-    //   identifier: (t as libxmljs.Element).attr('identifier').value(),
-    // }));
-  // } catch (e) {
-   const files = getItemFiles(packages + '/' + packageId + '/items')
-      .filter((file) => file.endsWith('xml'))
-      .map((file, index) => ({ href: encodeURI(file), identifier: `file${index}${encodeURI(file)}` }));
-  // }
-  return { items: files };
+  return xmlContent;
 }
 
-// export function getAssessmentTest(packageId): string {
-//   const imsmanifest = getImsmanifestXML(packageId);
-//   const assessmenttest = getAssessmentTextXML(imsmanifest, packageId).content;
-//   return assessmenttest;
-// }
+/**
+ * Returns the item information (href and identifier) for all items in the package.
+ * @param packageId - The ID of the package.
+ * @returns An object containing the items.
+ */
+export function listPackageItems(packageId: string): { items: { href: string; identifier: string }[] } {
+  try {
+    const manifestContent = readManifest(packageId);
+    if (!manifestContent) {
+      throw new Error(`Manifest not found for package ${packageId}.`);
+    }
 
-export function saveEditXML(packageId, itemHref, XML): boolean {
-  if (fs.existsSync(packages + '/' + packageId + '/' + itemsfolder + itemHref)) {
-    fs.writeFileSync(packages + '/' + packageId + '/' + itemsfolder + itemHref, XML);
-    return true;
-  } else {
-    return false;
+    const { content } = loadAssessmentTest(manifestContent, packageId);
+    const $ = cheerio.load(content, { xmlMode: true });
+
+    const items = $('qti-assessment-item-ref').map((_, el) => ({
+      href: $(el).attr('href')!,
+      identifier: $(el).attr('identifier')!,
+    })).get();
+
+    return { items };
+  } catch (error) {
+    console.error(`Error retrieving items for package ${packageId}:`, error);
+    return { items: [] };
   }
 }
 
-export const getPackages = (): { packages: string[] } => {
-  const directories = getDirectories(packages);
+/**
+ * Lists all available packages by reading the directories in the packages folder.
+ * @returns An object containing the list of package directories.
+ */
+export function listPackages(): { packages: string[] } {
+  const directories = fs.readdirSync(packagesDir).filter(file => fs.statSync(path.join(packagesDir, file)).isDirectory());
   return { packages: directories };
-};
-
-export const getXSD = (): string => {
-  const xmlString = fs.readFileSync(path.resolve(__dirname, './assets/xsd/qticomponents.xsd'), 'utf8');
-  return xmlString;
-};
+}

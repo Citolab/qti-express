@@ -1,14 +1,18 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
 import express from 'express';
 import * as path from 'path';
 import cors from 'cors';
 import * as fs from 'fs';
-
-import { getPackages, getXSD, itemsJson, processQtiXML, saveEditXML, validateItemXML } from './libs/lib';
-import { storeResponse, getResponse, reset, getScore } from './libs/response-processing';
+import { 
+  listPackageItems,
+  listPackages,
+  processQtiItem
+} from './libs/lib';
+import { 
+  storeResponse, 
+  getResponse, 
+  reset, 
+  getScore 
+} from './libs/response-processing';
 import { environment } from './environments/environment';
 
 const app = express();
@@ -16,113 +20,110 @@ const port = environment.port;
 const apiPrefix = `/api`;
 const packagesLocation = '/packages/';
 
-app.use(cors()); // use cors to let other sites make a connection for data
+app.use(cors()); // Allow CORS to enable external connections
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Route to get available packages in JSON format
 app.get(`${apiPrefix}/packages.json`, (req, res) => {
-  const packages = getPackages();
-  res.json(packages);
+  try {
+    const packages = listPackages();
+    res.json(packages);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve packages' });
+  }
 });
 
+// Route to serve static files for a given package
 app.get(`${apiPrefix}/:packageId/static/*`, (req, res) => {
-  // console.log(__dirname + packagesLocation + req.params.packageId + '/items/' + req.params[0]);
-
-  // const param1 = req.query.packageId // params[0]
-  // @ts-ignore
-  const param1 = req.params[0]
-  fs.readFile(__dirname + packagesLocation + req.params.packageId + '/items/' + param1, (err, data) => {
+  const filePath = `${__dirname}${packagesLocation}${req.params.packageId}/items/${req.params[0]}`;
+  
+  fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      return res.end('Error loading ' + req.params + ' with Error: ' + err);
+      return res.status(500).send(`Error loading ${req.params[0]}: ${err}`);
     }
-    // res.writeHead(200, {"Content-Type": mime});
     res.end(data);
   });
-  // }
 });
 
+// Route to fetch and process QTI XML for a specific item
 app.get(`${apiPrefix}/:packageId/items/:itemHref`, (req, res) => {
-  if (req.params.itemHref.endsWith('.xml')) {
-    const xmlDoc = processQtiXML(
-      req.params.packageId,
-      req.params.itemHref ? req.params.itemHref : 0,
-      req.query.noresponsexml
-    );
-    res.set('Content-Type', 'text/xml');
-    res.send(xmlDoc);
-  }
-});
-
-app.get(`${apiPrefix}/:packageId/items/:itemHref/validate`, (req, res) => {
-  const validationErrors = validateItemXML(req.params.packageId, req.params.itemHref ? req.params.itemHref : 0);
-  res.json(validationErrors);
-});
-// app.get(`${api}/:packageId/assessmenttest.xml`, (req, res) => {
-//   const assessmenttest = getAssessmentTest(req.params.packageId);
-//   res.set('Content-Type', 'text/xml');
-//   res.send(assessmenttest);
-// });
-app.get(`${apiPrefix}/:packageId/items.json`, (req, res) => {
-  const items = itemsJson(req.params.packageId);
-  res.json(items);
-});
-app.post(`${apiPrefix}/saveeditxml/:packageId/:itemHref`, (req, res) => {
-  const success = saveEditXML(req.params.packageId, req.params.itemHref, req.body.edittedxml);
-  success ? res.send('saved') : res.status(400).send({ message: 'Not found' });
-});
-app.get(`${apiPrefix}/qti.xsd`, (req, res) => {
-  const xsd = getXSD();
-  res.set('Content-Type', 'text/xml');
-  res.send(xsd);
-});
-app.post(`${apiPrefix}/response/:packageId/:itemHref`, (req, res) => {
-  storeResponse(req.query.identifier, req.body);
-  res.send('saved');
-});
-app.get(`${apiPrefix}/response/:packageId/:itemHref`, (req, res) => {
-  const itemResponse = getResponse(req.query.identifier);
-  if (itemResponse) {
-    res.json(itemResponse);
+  const { packageId, itemHref } = req.params;
+  
+  if (itemHref.endsWith('.xml')) {
+    try {
+      const noResponseXml = req.query.noresponsexml === 'true'; // Convert to boolean
+      const xmlDoc = processQtiItem(packageId, itemHref, noResponseXml);
+      res.set('Content-Type', 'text/xml');
+      res.send(xmlDoc);
+    } catch (error) {
+      res.status(500).send({ error: 'Failed to process QTI XML' });
+    }
   } else {
-    res.status(404).send({
-      item: req.query.identifier,
-      interactions: [],
-    });
+    res.status(400).send({ error: 'Invalid file format. Only XML files are allowed.' });
   }
 });
+
+// Route to get items of a specific package in JSON format
+app.get(`${apiPrefix}/:packageId/items.json`, (req, res) => {
+  try {
+    const items = listPackageItems(req.params.packageId);
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve items' });
+  }
+});
+
+// Route to store response for a given item
+app.post(`${apiPrefix}/response/:packageId/:itemHref`, (req, res) => {
+  try {
+    storeResponse(req.query.identifier, req.body);
+    res.send('Response saved successfully');
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to store response' });
+  }
+});
+
+// Route to retrieve response for a given item
+app.get(`${apiPrefix}/response/:packageId/:itemHref`, (req, res) => {
+  try {
+    const response = getResponse(req.query.identifier);
+    if (response) {
+      res.json(response);
+    } else {
+      res.status(404).json({ item: req.query.identifier, interactions: [] });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve response' });
+  }
+});
+
+// Route to reset all responses
 app.get(`${apiPrefix}/response/reset`, (req, res) => {
-  const responses = reset();
-  res.json(responses);
+  try {
+    const responses = reset();
+    res.json(responses);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reset responses' });
+  }
 });
+
+// Route to get the score for a specific item
 app.get(`${apiPrefix}/score/:packageId/:itemHref`, (req, res) => {
-  const score = getScore(req.params.packageId, req.params.itemHref ? req.params.itemHref : 0, req.query.identifier);
-  res.json(score);
+  try {
+    const score = getScore(req.params.packageId, req.params.itemHref, req.query.identifier);
+    res.json(score);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve score' });
+  }
 });
 
-// import { exportPDF } from './libs/export-pdf';
-// app.get(`${api}/:packageId/pdf`, exportPDF);
-
-// import { uploadPackage } from './libs/upload-package';
-// import * as multer from 'multer';
-// const upload = multer({ dest: './tmp' });
-// app.post('/upload', upload.single('package'), uploadPackage);
-
-// pk: this should come at the end, rewrites all urls to file in public
-// PUBLIC IS NOT A PUBLIC STATIC FOLDER ANYMORE
+// Serve static files from the assets/public directory
 app.use(express.static(path.join(__dirname, 'assets/public')));
-// app.get(`${api}/:packageId/*', (req, res) => {
-//   console.log(req.params);
-//   fs.readFile(__dirname + packagesLocation + req.params.packageId + '/' + req.params[0], (err, data) => {
-//     if (err) {
-//       res.writeHead(500, { 'Content-Type': 'text/plain' });
-//       return res.end('Error loading ' + req.params + ' with Error: ' + err);
-//     }
-//     // res.writeHead(200, {"Content-Type": mime});
-//     res.end(data);
-//   });
-// });
 
-app.listen(port, () => console.log(`QTI Api listening on port localhost:${port} `));
+// Start server and listen on specified port
+app.listen(port, () => {
+  console.log(`QTI API is running on http://localhost:${port}`);
+});
 
 export default app;
