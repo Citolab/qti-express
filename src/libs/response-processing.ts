@@ -1,4 +1,4 @@
-import { InputResponseFormat, QtiAssessmentItem, ResponseInteraction } from "@citolab/qti-components";
+import { QtiAssessmentItem, ResponseInteraction } from "@citolab/qti-components";
 import * as fs from "fs";
 import * as jsdom from "jsdom";
 import { environment } from "../environments/environment";

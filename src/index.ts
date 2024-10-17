@@ -83,7 +83,7 @@ app.post(`${apiPrefix}/response/:packageId/:itemHref`, (req, res) => {
 app.get(`${apiPrefix}/response/:packageId/:itemHref`, (req, res) => {
   const itemResponse = getResponse(req.query.identifier);
   if (itemResponse) {
-    return res.json(itemResponse);
+    res.json(itemResponse);
   } else {
     res.status(404).send({
       item: req.query.identifier,
