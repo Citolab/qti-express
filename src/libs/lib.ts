@@ -1,7 +1,11 @@
 // import * as libxslt from 'libxslt';
 import * as path from 'path';
 import * as fs from 'fs';
-// import { qtiConvert } from '@citolab/qti-convert';
+
+
+import { testLoader, ManifestData } from '@citolab/qti-convert/qti-loader';
+import { qtiTransform } from '@citolab/qti-convert/qti-transformer';
+
 
 const packages = path.resolve(__dirname, '../packages/') + '/';
 const itemsfolder = 'items/';
