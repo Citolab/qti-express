@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import { 
   listPackageItems,
   listPackages,
+  loadTestFromManifest,
   processQtiItem
 } from './libs/lib';
 import { 
@@ -36,14 +37,24 @@ app.get(`${apiPrefix}/packages.json`, (req, res) => {
 
 // Route to serve static files for a given package
 app.get(`${apiPrefix}/:packageId/static/*`, (req, res) => {
-  const filePath = `${__dirname}${packagesLocation}${req.params.packageId}/items/${req.params[0]}`;
-  
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      return res.status(500).send(`Error loading ${req.params[0]}: ${err}`);
-    }
-    res.end(data);
-  });
+  try {
+    // Load the manifest data and retrieve the correct item location
+    const manifestData = loadTestFromManifest(req.params.packageId);
+    
+    // Construct the correct file path based on the dynamic item location
+    const itemLocation = manifestData.itemLocation;
+    const filePath = path.join(itemLocation, req.params[0]);
+    
+    // Read the file from the determined location
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        return res.status(500).send(`Error loading ${req.params[0]}: ${err}`);
+      }
+      res.end(data);
+    });
+  } catch (error) {
+     res.status(500).send(`Error processing request: ${error.message}`);
+  }
 });
 
 // Route to fetch and process QTI XML for a specific item

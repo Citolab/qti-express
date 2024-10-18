@@ -164,3 +164,48 @@ export function listPackages(): { packages: string[] } {
   const directories = fs.readdirSync(packagesDir).filter(file => fs.statSync(path.join(packagesDir, file)).isDirectory());
   return { packages: directories };
 }
+
+
+
+export type ManifestData = {
+  itemLocation: string;
+  testIdentifier: string;
+  assessmentXML?: string;
+  assessmentLocation: string;
+  items: {
+    identifier: string;
+    href: string;
+  }[];
+};
+
+/**
+ * Loads and parses the manifest data, including the assessment test and items, using local file operations.
+ * @param packageId - The ID of the package containing the IMS manifest.
+ * @returns A Promise that resolves to a ManifestData object.
+ */
+export const loadTestFromManifest = (packageId: string): ManifestData => {
+  // Step 1: Read and parse the IMS manifest from the local file system
+  const manifestContent = readManifest(packageId);
+  if (!manifestContent) {
+    throw new Error('IMS manifest not found.');
+  }
+
+  // Step 2: Extract the assessment test details from the manifest
+  const { content: assessmentXML, location: assessmentLocation, filename: testIdentifier } = loadAssessmentTest(manifestContent, packageId);
+
+  // Step 3: Parse the assessment test XML and retrieve the items
+  const assessmentTestPath = path.join(packagesDir, packageId, assessmentLocation, testIdentifier);
+  const items = parseAssessmentItems(assessmentTestPath);
+
+  // Step 4: Determine the item location based on the assessment test's first item
+  const itemLocation = path.join(packagesDir, packageId, assessmentLocation, path.dirname(items[0].href));
+
+  // Step 5: Return the parsed data as a ManifestData object
+  return {
+    itemLocation,
+    testIdentifier,
+    assessmentXML,
+    assessmentLocation,
+    items,
+  };
+};
