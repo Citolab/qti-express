@@ -63,8 +63,8 @@ app.get(`${apiPrefix}/:packageId/items/:itemHref`, (req, res) => {
   
   if (itemHref.endsWith('.xml')) {
     try {
-      const noResponseXml = req.query.noresponsexml === 'true'; // Convert to boolean
-      const xmlDoc = processQtiItem(packageId, itemHref, noResponseXml);
+      const scorebackend = req.query?.scorebackend === 'true'; // Convert to boolean
+      const xmlDoc = processQtiItem(packageId, itemHref, scorebackend);
       res.set('Content-Type', 'text/xml');
       res.send(xmlDoc);
     } catch (error) {
