@@ -19,7 +19,7 @@ export const getResponse = (itemId): VariableValue<string | string[] | null> => 
   return response && response.length > 0 ? response[0] : null;
 };
 
-export const getScore = (packageId, itemHref, itemId): number | null => {
+export const getScore = (packageId, itemHref, itemId): VariableValue<string | string[]>[] => {
   const itemXML = processQtiItem(packageId, itemHref, false);
   const variables = itemVariables.get(itemId);
 
@@ -40,7 +40,8 @@ export const getScore = (packageId, itemHref, itemId): number | null => {
   assessmentItem.variables = variables // responses.find((response) => response.item === item.identifier);
   assessmentItem.processResponse();
 
-  return assessmentItem.getOutcome("SCORE").value as any;
+  // return assessmentItem.getOutcome("SCORE").value as any;
+  return assessmentItem.variables;
 };
 
 export const reset = (): void => {
