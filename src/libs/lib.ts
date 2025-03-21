@@ -127,6 +127,25 @@ function getItemFilePaths(
   );
 }
 
+export function convertXmlToHtml(xml) {
+  const $ = cheerio.load(xml, { xmlMode: true });
+
+  // remove redundant information
+  $("[xmlns]").removeAttr("xmlns");
+  $("qti-stylesheet").remove();
+  $("qti-item-body").remove();
+  // Convert self-closing tags to opening/closing tags
+  $("*").each((_, elem) => {
+    if ($(elem).children().length === 0 && $(elem).text().trim() === "") {
+      $(elem).text(""); // Ensure a closing tag is created
+    }
+  });
+
+  // Output the modified HTML
+  const itemHTML = $.html();
+  return itemHTML;
+}
+
 /**
  * Processes the QTI XML content, with optional stripping of response data.
  * @param packageId - The ID of the package.
@@ -140,7 +159,6 @@ export function processQtiItem(
   scoreBackend: boolean
 ): string {
   let xmlContent = getItemContent(packageId, itemHref);
-
   if (scoreBackend) {
     // Remove correct value and response processing tags
     const $xml = cheerio.load(xmlContent, { xmlMode: true });
@@ -155,16 +173,8 @@ export function processQtiItem(
     );
     xmlContent = $xml.xml();
   }
-  // Apply transformations or response stripping if needed (stubs for further implementation)
-  // xmlContent = applyCustomTransform(xmlContent);
-  // if (removeResponses) {
-  //   xmlContent = stripResponses(xmlContent);
-  // }
-  // xmlContent = convertQti2to3(xmlContent).xml();
-
   return xmlContent;
 }
-
 /**
  * Returns the item information (href and identifier) for all items in the package.
  * @param packageId - The ID of the package.

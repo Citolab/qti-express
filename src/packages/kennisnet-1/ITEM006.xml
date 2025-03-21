@@ -35,7 +35,6 @@
 		</qti-default-value>
 	</qti-outcome-declaration>
 	<qti-outcome-declaration identifier="FEEDBACK" base-type="identifier" cardinality="single" />
-	<qti-stylesheet href="resources/stylesheet.css" type="text/css" />
 	<qti-item-body>
 		<p>
 			Als de

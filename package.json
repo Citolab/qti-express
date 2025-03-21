@@ -2,13 +2,7 @@
   "name": "qti-express",
   "version": "0.0.0",
   "scripts": {
-    "build": "npx ts-node build.ts",
-    "lint": "npx eslint --ext .ts src/",
-    "lint:tests": "npx eslint --ext .ts spec/",
-    "start": "node -r module-alias/register ./dist --env=production",
-    "dev": "nodemon",
-    "test": "nodemon --config ./spec/nodemon.json",
-    "test:no-reloading": "npx ts-node --files -r tsconfig-paths/register ./spec"
+    "dev": "nodemon"
   },
   "nodemonConfig": {
     "watch": [
@@ -27,7 +21,7 @@
     "node": ">=8.10.0"
   },
   "dependencies": {
-    "@citolab/qti-convert": "^0.2.6",
+    "@citolab/qti-convert": "0.2.17",
     "@types/libxmljs": "^0.18.13",
     "cheerio": "^1.0.0",
     "cookie-parser": "^1.4.7",
@@ -44,7 +38,7 @@
     "ts-command-line-args": "^2.5.1"
   },
   "devDependencies": {
-    "@citolab/qti-components": "^6.9.1-beta.16",
+    "@citolab/qti-components": "file:.yalc/@citolab/qti-components",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -63,7 +57,7 @@
     "find": "^0.3.0",
     "fs-extra": "^11.2.0",
     "jasmine": "^5.4.0",
-    "jsdom": "^25.0.1",
+    "jsdom": "^26.0.0",
     "libxmljs": "^1.0.11",
     "nodemon": "^3.1.7",
     "supertest": "^7.0.0",

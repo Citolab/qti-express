@@ -1,121 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes" />
-
-    <title>QTI-api</title>
-    <meta name="description" content="qti-api" />
-
-    <!-- <script type="module" src="./node_modules/qti-components/build/index.js" async></script> -->
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, initial-scale=1, user-scalable=yes" />
+    <title>QTI API Documentation</title>
+    <meta name="description" content="QTI API documentation" />
     <style>
-      dd {
-        margin-bottom: 1rem;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        dl {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        dt {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+        form {
+            margin-top: 10px;
+        }
     </style>
-  </head>
-
-  <body>
-    <h1>Api for QTI</h1>
-
+</head>
+<body>
+    <h1>QTI API Documentation</h1>
+    <p>This API provides access to QTI packages, items, responses, and scoring functionalities.</p>
     <dl>
-      <dt><a href="/api/upload">POST upload_package</a></dt>
-      <dd>
-        <form action="/upload" enctype="multipart/form-data" method="POST">
-          <input type="file" id="package" name="package" />
-          <input type="submit" />
-        </form>
-      </dd>
+        <dt>Upload a QTI Package (POST)</dt>
+        <dd>
+            <form action="/api/upload" enctype="multipart/form-data" method="POST">
+                <input type="file" name="package" />
+                <input type="submit" value="Upload" />
+            </form>
+        </dd>
 
-      <dt>
-        <a href="/api/packages.json"> packages.json </a>
-      </dt>
-      <dd>json item list of the folders in packages</dd>
+        <dt><a href="/api/packages.json">Get Available Packages (GET)</a></dt>
+        <dd>Returns a list of available packages in JSON format.</dd>
 
-      <dt>
-        <a href="/api/kennisnet-1/items.json"> kennisnet-1/items.json </a>
-      </dt>
-      <dd>Items in a package folder</dd>
+        <dt><a href="/api/kennisnet-1/items.json">Get Items in a Package (GET)</a></dt>
+        <dd>Returns a list of items in the specified package.</dd>
 
-      <!-- <dt>
-        <a href="kennisnet-1/assessmenttest.xml"> kennisnet-1/assessmenttest.xml </a>
-      </dt>
-      <dd>XML of the qti-assessment-test, if there is any xml, with whatever name</dd> -->
+        <dt><a href="/api/kennisnet-1/items/ITEM002.xml">Get QTI Item XML (GET)</a></dt>
+        <dd>Retrieves the XML of a specific QTI item.</dd>
 
-      <dt>
-        <a href="/api/kennisnet-1/items/ITEM002.xml"> /kennisnet-1/items/ITEM002.xml </a>
-      </dt>
-      <dd>The xml of the qti item with corresponding name</dd>
+        <dt><a href="/api/kennisnet-1/items/ITEM002.xml?scorebackend=true">Get QTI Item without Responses (GET)</a></dt>
+        <dd>Retrieves the XML of a QTI item with correct answers and response processing stripped.</dd>
 
-      <!-- <dt>
-        <a href="kennisnet-1/items/M6.LO6_3.xml/validate"> kennisnet-1/items/M6.LO6_3.xml/validate </a>
-      </dt>
-      <dd>Validate xml against our own XSD schema</dd> -->
+        <dt><a href="/api/qti.xsd">Get QTI XSD Schema (GET)</a></dt>
+        <dd>Returns the XSD schema used for validation and code completion.</dd>
 
-      <dt>
-        <a href="/api/kennisnet-1/items/ITEM002.xml?scorebackend=true"> kennisnet-1/items/ITEM002.xml?scorebackend=true </a>
-      </dt>
-      <dd>The xml of with the correct answer and responseprocessing tag and children stripped</dd>
+        <dt>Save Edited XML (POST)</dt>
+        <dd>
+            Endpoint: <code>/api/saveeditxml/:packageId/:itemHref</code>
+            <br>Allows saving an edited QTI XML item back into storage.
+        </dd>
 
-      <dt>
-        <a href="/api/qti.xsd"> qti.xsd </a>
-      </dt>
-      <dd>Getting the XSD of our light player to use schema, for use in code completion</dd>
-
-      <dt>
-        <a href="/api/saveeditxml/kennisnet-1/M6.LO6_3.xml"> POST saveeditxml/kennisnet-1/M6.LO6_3.xml </a>
-      </dt>
-      <dd>Saves the editted XML back into the item, for use in edit functionality</dd>
-
-      <dt>
-        <a href="/api/itemresponse/kennisnet-1/M6.LO6_3.xml"> POST response/kennisnet-1/M6.LO6_3.xml </a>
-      </dt>
-
-      <dd>
-        JSON response saving of one interaction of one item Responses come in like :
-        <pre>
+        <dt>Save Item Response (POST)</dt>
+        <dd>
+            Endpoint: <code>/api/response/:packageId/:itemHref</code>
+            <br>Stores the response of a specific item.
+            <pre>
+POST /api/response/kennisnet-1/ITEM002.xml
 {
-    item: "ITM001",
-    interaction: {
-        responseIdentifier: "A",
-        responses: []
+    "item": "ITEM002",
+    "interaction": {
+        "responseIdentifier": "A",
+        "responses": ["Choice A"]
     }
 }
+            </pre>
+        </dd>
 
+        <dt><a href="/api/response/kennisnet-1/ITEM002.xml">Get Item Response (GET)</a></dt>
+        <dd>
+            Retrieves stored responses for a given item.
+            <pre>
 {
-    item: "ITM001",
-    interaction: {
-        responseIdentifier: "B",
-        responses: []
-    }
-}
-</pre
-        >
-      </dd>
-
-      <dt><a href="/api/itemresponse/kennisnet-1/01109.xml">GET response/kennisnet-1/01109.xml</a></dt>
-      <dd>
-        <pre>
-Will be delivered back in an array of interactions, which in itself can be set back on the items
-{
-    item: "ITM001",
-    interactions: [
+    "item": "ITEM002",
+    "interactions": [
         {
-        responseIdentifier: "A",
-        responses: []
-        }, {
-        responseIdentifier: "B",
-        responses: []
+            "responseIdentifier": "A",
+            "responses": ["Choice A"]
         }
     ]
 }
-            </pre
-        >
-      </dd>
+            </pre>
+        </dd>
 
-      <dt><a href="/api/response/reset">GET itemresponse/reset</a></dt>
-      <dd>Resets the data on the server</dd>
+        <dt><a href="/api/response/reset">Reset All Responses (GET)</a></dt>
+        <dd>Clears all stored responses on the server.</dd>
+
+        <dt>Get Score for an Item (GET)</dt>
+        <dd>
+            Endpoint: <code>/api/score/:packageId/:itemHref</code>
+            <br>Retrieves the score of a specific item.
+            <pre>
+GET /api/score/kennisnet-1/ITEM002.xml?identifier=student123
+{
+    "score": 4,
+    "maxScore": 5
+}
+            </pre>
+        </dd>
     </dl>
-  </body>
+</body>
 </html>
