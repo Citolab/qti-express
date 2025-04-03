@@ -164,6 +164,7 @@ export function processQtiItem(
     const $xml = cheerio.load(xmlContent, { xmlMode: true });
     $xml("qti-correct-response").remove();
     $xml("qti-response-processing").remove();
+    $xml("qti-mapping").remove();
     xmlContent = $xml.xml();
 
     // Add scoring="externalMachine" to SCORE outcome if exists
