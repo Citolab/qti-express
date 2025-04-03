@@ -38,7 +38,7 @@
     "ts-command-line-args": "^2.5.1"
   },
   "devDependencies": {
-    "@citolab/qti-components": "^7.2.0",
+    "@citolab/qti-components": "file:.yalc/@citolab/qti-components",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",

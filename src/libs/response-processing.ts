@@ -35,30 +35,32 @@ export const getScore = (
   itemHref,
   itemId
 ): VariableValue<string | string[]>[] => {
+
+  /* get the QTI XML for the item */
   const itemXML = processQtiItem(packageId, itemHref, false);
   const itemHTML = convertXmlToHtml(itemXML);
 
-  const variables = itemVariables.get(itemId);
-
+  /* create a new JSDOM instance to run the QTI library */
   const { window } = new JSDOM(``, { runScripts: "dangerously" });
   const document = window.document;
-
   const scriptEl = document.createElement("script");
   scriptEl.type = "text/javascript";
   scriptEl.textContent = qtiLibrary;
   document.body.appendChild(scriptEl);
-
   const div = document.createElement("div");
+
+  /* insert the HTML of the item */
   div.innerHTML = itemHTML;
   document.body.appendChild(div);
 
-  const assessmentItem = document.body.querySelector(
-    "qti-assessment-item"
-  ) as QtiAssessmentItem;
-
+  
+  /* get the Assesmentitem and set the variables from the client */
+  const assessmentItem = document.body.querySelector("qti-assessment-item") as QtiAssessmentItem;
+  const variables = itemVariables.get(itemId);
   assessmentItem.variables = variables; 
-  assessmentItem.processResponse();
 
+  /* process the responses and send them back */
+  assessmentItem.processResponse();
   return assessmentItem.variables;
 };
 
